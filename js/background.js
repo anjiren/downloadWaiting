@@ -1,7 +1,7 @@
 function triggerlearning(reason) {
   // Send a message to the active tab to launch a popup
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-    chrome.tabs.sendMessage(tabs[0].id, {greeting: "launchPopup"},
+    chrome.tabs.sendMessage(tabs[0].id, { greeting: "launchPopup" },
     function(response) {});
   });
 }
@@ -10,7 +10,7 @@ function triggerlearning(reason) {
 chrome.downloads.onCreated.addListener(function(downloadItem) {
   console.log("Downloading...");
   var downloadSize = downloadItem.fileSize;
-  console.log("Download size: " + downloadSize);
+  console.log("Download size: " + downloadSize + "b"); 
   triggerlearning("download");
 
     // trigger learning if download is large
@@ -28,7 +28,3 @@ chrome.downloads.onCreated.addListener(function(downloadItem) {
       });
     },2000);*/
   });
-
-
-// Listen for any changes to the URL of any tab.
-//chrome.tabs.onUpdated.addListener(getBgColors);
