@@ -5,13 +5,17 @@ chrome.runtime.onMessage.addListener(
 			"from a content script:" + sender.tab.url :
 			"from the extension");
 		// Create quiz popup
+		var c = document.createElement('div');
+		c.id = "quizContainer";
 		var d = document.createElement('div');
 		d.id = "quiz";
-		$("body").append(d);
+		$("body").append(c);
+		$("#quizContainer").append(d).css('background-color', 'transparent');
 			
 		$("#quiz").css('z-index', '1000')
 				  .css('overflow', 'auto')
-				  .css('position', 'relative');
+				  .css('position', 'relative')
+				  .css('width', '200px');
 
 		var choice1 = document.createElement('div');
 		choice1.id = "c1";
@@ -22,31 +26,52 @@ chrome.runtime.onMessage.addListener(
 		var clear = document.createElement('div');
 		clear.id = "clear";
 
-		$("#quiz").append(choice1);
-		$("#quiz").append(choice2);
-		$("#quiz").append(clear);
+		var question = document.createElement('span');
+		question.id = "prompt";
 
-		$("#c1").css('height', '100px').css('width', '40%').css('border', '1px solid')
-		.css('color', 'white').html("C1!").css('background-color', 'red').css('float', 'left');
-		$("#c2").css('height', '100px').css('width', '40%').css('border', '1px solid')
-		.css('color', 'white').html("C2!").css('background-color', 'red').css('float', 'left');
+		$("#quiz").append(question).append(choice1).append(choice2).append(clear);
+		// Entire dialog
+		$("#quiz").css('font-family', 'sans-serif').css('font-size', '12px')
+		.css('text-align', 'center');
+
+		// Question prompt
+		$("#prompt").css('background-color', '#A69F88').css('height', '40px')
+		.html("Question?").css('display', 'block').css('border', '1px solid white')
+		.css("box-sizing", "border-box").css('padding-top', '5px').css('color', '#5FE6B9')
+		.css("letter-spacing", "1px");
+
+		// Choice 1 answer
+		$("#c1").css('height', '100px').css('width', '98px').css('border', '1px solid white')
+		.css('color', 'white').html("Choice 1").css('background-color', '#D1CCBD').css('float', 'left')
+		.css('margin-left', 'auto').css('padding-top', '20px');
+
+		// Choice 2 answer
+		$("#c2").css('height', '100px').css('width', '98px').css('border', '1px solid white')
+		.css('color', 'white').html("Choice 2").css('background-color', '#D1CCBD').css('float', 'left')
+		.css('margin-right', 'auto').css('padding-top', '20px');
+
+		// Keeps choice1 and choice2 adjacent
 		$("#clear").css('clear', 'both');
+
+		$(".ui-button-text").html("x");
 
 
 		function chooseC1() {
-			$("#c1").css('background-color', 'green');
+			// right answer
+			$("#c1").css('background-color', '#8EDD65');
 		};
 
 		function exitC1() {
-			$("#c1").css('background-color', 'red');
+			$("#c1").css('background-color', '#D1CCBD');
 		};
 
 		function chooseC2() {
-			$("#c2").css('background-color', 'green');
+			// wrong answer
+			$("#c2").css('background-color', '#FF5C39');
 		};
 
 		function exitC2() {
-			$("#c2").css('background-color', 'red');
+			$("#c2").css('background-color', '#D1CCBD');
 		};
 
 		$("#c1").mouseenter(chooseC1).mouseleave(exitC1);
@@ -54,7 +79,7 @@ chrome.runtime.onMessage.addListener(
 
 		if (request.greeting == "launchPopup") {
 			console.log("Launching popup quiz!");
-			$("#quiz").dialog({position: {my: "left top", at: "left bottom", of: window}});
+			$("#quizContainer").dialog({position: {my: "left top", at: "left bottom", of: window}});
 			console.log("Quiz launched!")
 		}
 	});
