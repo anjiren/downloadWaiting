@@ -1,0 +1,27 @@
+{
+  "manifest_version": 2,
+
+  "name": "DownloadWaiting",
+  "version": "1.0",
+  "description": "Two-choice popup quiz when you download files.",
+  "background": { "scripts": ["js/background.js"], "persistent": false },
+  "page_action" :
+  {
+    "default_icon" : "images/icon.png",
+    "default_title" : "title",
+    "default_popup": "popup.html"
+  },
+
+  "permissions" : [
+    "downloads"
+  ],
+
+  "web_accessible_resources":[
+  ],
+
+  "content_scripts": [{
+  "matches": ["<all_urls>"],
+  "run_at": "document_start",
+  "js": ["js/jquery-1.11.1.min.js", "js/popup.js"]
+  }]
+}
