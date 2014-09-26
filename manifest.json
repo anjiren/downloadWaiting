@@ -4,7 +4,8 @@
   "name": "DownloadWaiting",
   "version": "1.0",
   "description": "Two-choice popup quiz when you download files.",
-  "background": { "scripts": ["js/background.js"], "persistent": false },
+  "background": { "page": "background.html",
+                  "persistent": false },
   "page_action" :
   {
     "default_icon" : "images/icon.png",
@@ -13,7 +14,9 @@
   },
 
   "permissions" : [
-    "downloads"
+    "downloads",
+    "tabs",
+    "activeTab"
   ],
 
   "web_accessible_resources": ["popup.html"],

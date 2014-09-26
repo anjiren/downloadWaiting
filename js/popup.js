@@ -1,7 +1,14 @@
 chrome.runtime.onMessage.addListener(
 	function(request, sender, sendResponse){
+		// var parseScript = document.createElement('script');
+		// parseScript.onload = function() {
+		// 	console.log("Parse loaded and ready!");
+		// };
+		// parseScript.id = "parseScript";
+		// $("#parseScript").attr("src", "js/parse-1.3.0.min.js");
+		// $("head").append(parseScript);
 		// Check if message was sent from another content script or the extension
-		console.log(sender.tab ?
+/*		console.log(sender.tab ?
 			"from a content script:" + sender.tab.url :
 			"from the extension");
 		// Create quiz popup
@@ -81,5 +88,5 @@ chrome.runtime.onMessage.addListener(
 			console.log("Launching popup quiz!");
 			$("#quizContainer").dialog({position: {my: "left top", at: "left bottom", of: window}});
 			console.log("Quiz launched!")
-		}
+		}*/
 	});
