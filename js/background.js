@@ -19,7 +19,8 @@ function triggerLearning(reason) {
   });
 }
 
-/* Checks for downloads. Currently triggers learning only on large downloads. */
+/* Checks for downloads. Triggers on all downloads and logs user ID, download start time
+and end time, and download size to Parse. */
 chrome.downloads.onCreated.addListener(function(downloadItem) {
   //chrome.storage.sync.get('USER_ID', function(obj) {
     //console.log(obj) 
@@ -38,7 +39,7 @@ chrome.downloads.onCreated.addListener(function(downloadItem) {
 
   chrome.storage.sync.get('USER_ID', function(obj) {
     dataChunk.set("userID", obj.USER_ID);
-  })
+  });
   dataChunk.set("size", downloadSize);
   dataChunk.set("downloadStartTime", downloadItem.startTime);
   // trigglerLearning("download");
@@ -55,14 +56,14 @@ chrome.downloads.onCreated.addListener(function(downloadItem) {
             console.log("DownloadWaiting: Download end time: " + item.endTime);
             dataChunk.set("downloadEndTime", item.endTime)
             console.log(item.id);
-              dataChunk.save(null, {
+            dataChunk.save(null, {
               success: function(gameScore) {
                 console.log("DownloadWaiting: Data sent to Parse.")
               },
               error: function(gameScore, error) {
                 console.log("DownloadWaiting: Parse save error.");
               }
-              });
+            });
           } else {
             // Download was interrupted.
             clearInterval(waitForDownloadComplete);
@@ -71,39 +72,53 @@ chrome.downloads.onCreated.addListener(function(downloadItem) {
     }, 2000);
 
 
- // var waitForDownloadComplete = setInterval(function(){
- //      chrome.downloads.search({}, function(items){
- //        items.forEach(function(item){
- //          if (item.state == "in_progress") {
- //            console.log("% Downloaded: " + item.bytesReceived + " " + item.bytesReceived/item.totalBytes);
- //            console.log("Estimated end time: " + item.estimatedEndTime);
- //          } else if (item.state == "complete") {
- //            clearInterval(waitForDownloadComplete);
- //            console.log("Download complete!");
- //            dataChunk.set("downloadEndTime", downloadItem.endTime)
- //            console.log(item.id);
- //              dataChunk.save(null, {
- //              success: function(gameScore) {
- //                console.log("Data sent to Parse.")
- //              },
- //              error: function(gameScore, error) {
- //                console.log("Parse save error.");
- //              }
- //              });
- //          }
- //        })
- //      });
- //    }, 2000);
+/* Checks for slow page loads. Logs load time if greater than a certain value. */
 
-    // Incrementally checks progress of download
-   /* setInterval(function(){
-      chrome.downloads.search({}, function(items){
-        items.forEach(function(item){
-          if(item.state == "in_progress"){
-            console.log("% downloaded: " + item.bytesReceived + " " + item.bytesReceived/item.totalBytes);
-            console.log("estimated end time: " + item.estimatedEndTime);
+// keys = request ids, values = time this key was inserted
+var requests = {};
+var responses = {};
+
+chrome.webRequest.onSendHeaders.addListener(function(info){
+  var timenow = Date.now();
+  requests[info.requestId] = timenow;
+
+  setTimeout(function(){
+    if(!(info.requestId in responses)){
+      console.error("PageWaiting: SLOW LOAD.");
+
+      // Trigger learning if page is loading slowly
+      // triggerlearning("slowpageload");
+    }
+  }, 1000);
+
+}, {types: ["main_frame"], urls: ["*://*/*"]});
+
+
+chrome.webRequest.onResponseStarted.addListener(function(info){
+    if(responses[info.requestId] == undefined){
+
+      var timenow = Date.now();
+      var timediff = timenow - requests[info.requestId];
+      responses[info.requestId] = timenow;
+      console.log("Page load request: " + info.requestID + "loaded in: " + timediff + "ms");
+      // Save to Parse if loading took more than 1 second.
+      if (timediff > 1000) {
+        var SlowPageData = Parse.Object.extend("SlowPageData");
+        var dataChunk = new SlowPageData();
+          chrome.storage.sync.get('USER_ID', function(obj) {
+            dataChunk.set("userID", obj.USER_ID);
+          });
+        dataChunk.set("loadTime", timediff);
+        dataChunk.save(null, {
+          success: function(gameScore) {
+            console.log("PageWaiting: Data sent to Parse.")
+          },
+          error: function(gameScore, error) {
+            console.log("PageWaiting: Parse save error.");
           }
-        })
-      });
-    },2000);*/
+        });
+      }
+
+    }
+}, {types: ["main_frame"], urls: ["*://*/*"]});
   });

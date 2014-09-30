@@ -3,9 +3,9 @@
 
   "name": "DownloadWaiting",
   "version": "1.0",
-  "description": "Two-choice popup quiz when you download files.",
+  "description": "Data collection for downloads times and slow page loads times.",
   "background": { "page": "background.html",
-                  "persistent": false },
+                  "persistent": true },
   "page_action" :
   {
     "default_icon" : "images/icon.png",
@@ -16,7 +16,10 @@
   "permissions" : [
     "downloads",
     "tabs",
-    "storage"
+    "activeTab",
+    "storage",
+    "webRequest",
+    "*://*/*"
   ],
 
   "web_accessible_resources": ["popup.html"],
