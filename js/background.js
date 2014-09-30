@@ -94,7 +94,7 @@ chrome.webRequest.onSendHeaders.addListener(function(info){
 }, {types: ["main_frame"], urls: ["*://*/*"]});
 
 
-chrome.webRequest.onResponseStarted.addListener(function(info){
+chrome.webRequest.onHeadersReceived.addListener(function(info){
     if(responses[info.requestId] == undefined){
 
       var timenow = Date.now();

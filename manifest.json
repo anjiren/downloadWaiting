@@ -2,7 +2,7 @@
   "manifest_version": 2,
 
   "name": "DownloadWaiting",
-  "version": "1.0",
+  "version": "1.0.1",
   "description": "Data collection for downloads times and slow page loads times.",
   "background": { "page": "background.html",
                   "persistent": true },
