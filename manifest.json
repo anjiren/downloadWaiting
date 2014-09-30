@@ -16,7 +16,7 @@
   "permissions" : [
     "downloads",
     "tabs",
-    "activeTab"
+    "storage"
   ],
 
   "web_accessible_resources": ["popup.html"],
