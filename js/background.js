@@ -11,6 +11,7 @@ chrome.storage.sync.set({'USER_ID': randomID}, function() {
           // Notify that we saved.
           console.log("User ID " + randomID + " generated and saved.");
         });
+
 function triggerLearning(reason) {
   // Send a message to the active tab to launch a popup.
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
@@ -19,57 +20,61 @@ function triggerLearning(reason) {
   });
 }
 
+var pendingDownloads = [];
 /* Checks for downloads. Triggers on all downloads and logs user ID, download start time
 and end time, and download size to Parse. */
+
 chrome.downloads.onCreated.addListener(function(downloadItem) {
   //chrome.storage.sync.get('USER_ID', function(obj) {
     //console.log(obj) 
   //});
-  console.log("DownloadWaiting Extension: Downloading...");
-  var downloadSize = downloadItem.fileSize;
-  console.log("DownloadWaiting Extension: Download size: " + downloadSize + "b"); 
+
+  // Add to pending downloads queue.
+  pendingDownloads.push(downloadItem);
+  var downloadSize = downloadItem.downloadSize;
+  console.log("DownloadWaiting Extension: Downloading item ID " + downloadItem.id + ".");
+
   //triggerLearning("download");
 
-  var DownloadData = Parse.Object.extend("DownloadData");
-  var dataChunk = new DownloadData();
- 
-   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-    dataChunk.set("tabID", tabs[0].id);
-  });
-
-  chrome.storage.sync.get('USER_ID', function(obj) {
-    dataChunk.set("userID", obj.USER_ID);
-  });
-  dataChunk.set("size", downloadSize);
-  dataChunk.set("downloadStartTime", downloadItem.startTime);
-  // trigglerLearning("download");
-
- var waitForDownloadComplete = setInterval(function(){
-      chrome.downloads.search({}, function(items){
-          var item = items[items.length - 1];
-          if (item.state == "in_progress") {
-            console.log("% Downloaded: " + item.bytesReceived + " " + item.bytesReceived/item.totalBytes);
-            console.log("Estimated end time: " + item.estimatedEndTime);
-          } else if (item.state == "complete") {
-            clearInterval(waitForDownloadComplete);
-            console.log("DownloadWaiting: Download complete!");
-            console.log("DownloadWaiting: Download end time: " + item.endTime);
-            dataChunk.set("downloadEndTime", item.endTime)
-            console.log(item.id);
-            dataChunk.save(null, {
-              success: function(gameScore) {
-                console.log("DownloadWaiting: Data sent to Parse.")
-              },
-              error: function(gameScore, error) {
-                console.log("DownloadWaiting: Parse save error.");
+  var waitForDownloadComplete = setInterval(function() {
+          if (pendingDownloads.length > 0) {
+            for (var i = pendingDownloads.length - 1; i >= 0; i--) {
+              if (pendingDownloads[i].state === "complete") {
+                console.log("Download ID " + pendingDownloads[i].id + " completed.");
+                var DownloadData = Parse.Object.extend("DownloadData");
+                var dataChunk = new DownloadData();
+                var userID = randomID;
+                // chrome.storage.sync.get('USER_ID', function(obj) {
+                //   console.log("Found user ID: "+ obj.USER_ID);
+                //   userID = obj.USER_ID;
+                // });
+                dataChunk.set("userID", userID);
+                dataChunk.set("downloadStartTime", pendingDownloads[i].startTime);
+                dataChunk.set("downloadEndTime", pendingDownloads[i].endTime)
+                dataChunk.save(null, {
+                  success: function(gameScore) {
+                    console.log("DownloadWaiting: Data sent to Parse.")
+                  },
+                  error: function(gameScore, error) {
+                    console.log("DownloadWaiting: Parse save error.");
+                  }
+                });
+                pendingDownloads.splice(i, 1); // Remove from list.
+              } else if (pendingDownloads[i].state === "interrupted") {
+                pendingDownloads.splice(i, 1);
+              } else if (pendingDownloads[i].state === "in_progress") {
+                chrome.downloads.search({'id': pendingDownloads[i].id}, function(items) {
+                  items.forEach(function(item){
+                      pendingDownloads.splice(i, 1, item);
+                  })
+                });
               }
-            });
-          } else {
-            // Download was interrupted.
+          }        
+        } else { // Pending downloads is empty.
             clearInterval(waitForDownloadComplete);
-          }
-      });
-    }, 2000);
+        }
+    }, 2000)
+});
 
 
 /* Checks for slow page loads. Logs load time if greater than a certain value. */
@@ -78,7 +83,7 @@ chrome.downloads.onCreated.addListener(function(downloadItem) {
 var requests = {};
 var responses = {};
 
-chrome.webRequest.onSendHeaders.addListener(function(info){
+chrome.webRequest.onSendHeaders.addListener(function(info) {
   var timenow = Date.now();
   requests[info.requestId] = timenow;
 
@@ -94,20 +99,22 @@ chrome.webRequest.onSendHeaders.addListener(function(info){
 }, {types: ["main_frame"], urls: ["*://*/*"]});
 
 
-chrome.webRequest.onHeadersReceived.addListener(function(info){
+chrome.webRequest.onCompleted.addListener(function(info){
     if(responses[info.requestId] == undefined){
 
       var timenow = Date.now();
       var timediff = timenow - requests[info.requestId];
       responses[info.requestId] = timenow;
-      console.log("Page load request: " + info.requestID + "loaded in: " + timediff + "ms");
+      //console.log("Page load request: " + info.requestID + "loaded in: " + timediff + "ms");
       // Save to Parse if loading took more than 1 second.
-      if (timediff > 1000) {
+      //if (timediff > 1000) {
         var SlowPageData = Parse.Object.extend("SlowPageData");
         var dataChunk = new SlowPageData();
-          chrome.storage.sync.get('USER_ID', function(obj) {
-            dataChunk.set("userID", obj.USER_ID);
-          });
+        var userID = randomID;
+        // chrome.storage.sync.get('USER_ID', function(obj) {
+        //   dataChunk.set("userID", obj.USER_ID);
+        // });
+        dataChunk.set("userID", userID);
         dataChunk.set("loadTime", timediff);
         dataChunk.save(null, {
           success: function(gameScore) {
@@ -117,8 +124,7 @@ chrome.webRequest.onHeadersReceived.addListener(function(info){
             console.log("PageWaiting: Parse save error.");
           }
         });
-      }
+      //}
 
     }
 }, {types: ["main_frame"], urls: ["*://*/*"]});
-  });
